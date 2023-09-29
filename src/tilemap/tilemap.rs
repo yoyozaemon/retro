@@ -51,4 +51,51 @@ impl TileMap {
             layer_count,
         }
     }
+
+    /// Retrieve the tile at given position on given layer
+    /// this will return None if the position / layers doesn't exist
+    pub fn get_tile<T: Into<Vector2u>>(&self, position: T, layer: u32) -> Option<u32> {
+        let index = self.compute_index(position.into())?;
+
+        self.tiles
+            .get(layer as usize)
+            .and_then(|v| v.get(index))
+            .copied()
+    }
+
+    /// Set the tile at given position and layer
+    /// this operation will fails if the position / layer doesn't exist
+    pub fn set_tile<T: Into<Vector2u>>(
+        &mut self,
+        position: T,
+        layer: u32,
+        tile: u32,
+    ) -> Result<(), TileMapError> {
+        let index = self
+            .compute_index(position.into())
+            .ok_or(TileMapError::InvalidPosition)?;
+
+        self.tiles
+            .get_mut(layer as usize)
+            .ok_or(TileMapError::InvalidLayer)
+            .map(|v| v[index] = tile)
+    }
+
+    /// Retrieve the tile map size
+    pub fn size(&self) -> Vector2u {
+        self.size
+    }
+
+    /// Retrieve the number of layers
+    pub fn layer_count(&self) -> u32 {
+        self.layer_count
+    }
+
+    /// Write the tile map to given writer
+    pub fn write(&self, mut writer: impl Write) -> Result<(), TileMapError> {
+        let bytes: Vec<u8> = bincode::serialize(&self).map_err(|_| TileMapError::WriteError)?;
+        writer
+            .write_all(&bytes)
+            .map_err(|_| TileMapError::WriteError)
+    }
 }
