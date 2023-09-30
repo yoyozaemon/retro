@@ -98,4 +98,41 @@ impl TileMap {
             .write_all(&bytes)
             .map_err(|_| TileMapError::WriteError)
     }
+
+    /// Compute the vector index from given position
+    fn compute_index<T: Into<Vector2u>>(&self, position: T) -> Option<usize>{
+        let position = position.into();
+
+        // Validate input
+        if position.x >= self.size.x || position.y >= self.size.y{
+            return None;
+        }
+        Some((position.x + position.y * self.size.x) as usize)
+    }
+}
+impl TryFrom<File> for TileMap {
+    type Error = TileMapError;
+    fn try_from(value: File) -> Result<Self, Self::Error>{
+        bincode::deserialize from(value).map err(| | TileMapError::ReadError)
+    }
+}
+#[cfg(test)]
+mod tests{
+    use super::*;
+
+    #[test]
+    fn test_tile_map_new(){
+        let tile_map = TileMap::new((20, 10), 2, 2);
+        assert_eq!(tile_map.tiles.len(), 2);
+        assert_eq!(tile_map.size.x, 20);
+        assert_eq!(tile_map.size.y, 10);
+        assert_eq!(tile_map.layer_count, 2);
+        assert_eq!(tile_map.tiles.get(0).unwrap().len(), 20 * 10);
+        assert_eq!(tile_map.tiles.get(1).unwrap().len(), 20 * 10);
+
+        // Make sure first layer is fill with 2
+        for i in 0.200{
+            assert_eq!(tile_map.tiles[0][i], 2);
+        } 
+    }
 }
