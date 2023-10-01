@@ -131,8 +131,85 @@ mod tests{
         assert_eq!(tile_map.tiles.get(1).unwrap().len(), 20 * 10);
 
         // Make sure first layer is fill with 2
-        for i in 0.200{
+        for i in 0..200{
             assert_eq!(tile_map.tiles[0][i], 2);
-        } 
+        }
+
+        // Make sure second layer is fill with 0 
+        for i in 0..200{
+            assert_eq!(tile_map.tiles[1][i], 0);
+        }
+    }
+
+    #[test]
+    fn test_tile_map_get_tile(){
+        let tile_map = TileMap::new((20, 10), 2,2);
+        for layer in 0..2{
+            for y in 0..10{
+                for x in 0..20{
+                    let expected_value = if layer == 0{ 2 } else { 0 };
+                    assert_eq!(tile_map.get_tile((x,y),layer).unwrap(), expected_value);
+                }
+            }
+        }
+
+        // Make sure access to non-existing value returns None
+        assert!(tile_map.get_tile((30, 5), 0).is_none()); // position not Valid 
+        assert!(tile_map.get_tile((0, 0), 22).is_none()); // layer doesn't exist
+    }
+    fn test_tile_map_set_tile() {
+        let mut tile_map = TileMap::new((6, 5), 2, 2);
+
+        assert!(tile_map.set_tile((0, 0), 0, 12).is_ok());
+        assert_eq!(tile_map.tiles[0][0], 12);
+        assert!(tile_map.set_tile((0, 0), 1, 12).is_ok());
+        assert_eq!(tile_map.tiles[1][0], 12);
+
+        assert!(tile_map.set_tile((1, 1), 0, 12).is_ok());
+        assert_eq!(tile_map.tiles[0][7], 12);
+        assert!(tile_map.set_tile((1, 1), 1, 12).is_ok());
+        assert_eq!(tile_map.tiles[1][7], 12);
+
+        assert!(tile_map.set_tile((5, 4), 0, 12).is_ok());
+        assert_eq!(tile_map.tiles[0][29], 12);
+        assert!(tile_map.set_tile((5, 4), 1, 12).is_ok());
+        assert_eq!(tile_map.tiles[1][29], 12);
+
+        // check impossible access
+        assert_eq!(
+            tile_map.set_tile((0, 0), 10, 12).err().unwrap(),
+            TileMapError::InvalidLayer
+        );
+        assert_eq!(
+            tile_map.set_tile((70, 0), 1, 12).err().unwrap(),
+            TileMapError::InvalidPosition
+        );
+    }
+
+    #[test]
+    fn test_tile_map_compute_index() {
+        let tile_map = TileMap::new((6, 5), 2, 2);
+
+        assert_eq!(tile_map.compute_index((0, 0)).unwrap(), 0);
+        assert_eq!(tile_map.compute_index((1, 1)).unwrap(), 7);
+        assert_eq!(tile_map.compute_index((5, 4)).unwrap(), 29);
+        assert!(tile_map.compute_index((70, 0)).is_none());
+    }
+
+    #[test]
+    fn test_tile_map_size() {
+        let tile_map = TileMap::new((20, 10), 2, 2);
+
+        let size = tile_map.size();
+        assert_eq!(size.x, 20);
+        assert_eq!(size.y, 10);
+    }
+
+    #[test]
+    fn test_tile_layer_count() {
+        let tile_map = TileMap::new((20, 10), 2, 2);
+
+        assert_eq!(tile_map.layer_count, 2);
+        assert_eq!(tile_map.layer_count(), 2);
     }
 }
